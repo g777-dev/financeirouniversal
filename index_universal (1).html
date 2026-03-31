@@ -271,13 +271,19 @@ var totalDebt=prof.debts.reduce(function(s,x){return s+x.installment*x.remaining
 var monthExp=totE+totP+totPont;
 var balance=totI-monthExp-totTr;
 
-function addDebt(){var nd=prof.debts.slice();nd.push({id:Date.now(),name:"Nova parcela",installment:0,remaining:1,dueDay:20});updateProf({debts:nd})}
-function addPontual(){var np=prof.pontuais.slice();np.push({id:Date.now(),name:"Nova divida",total:0});updateProf({pontuais:np})}
+function addDebt(){var nd=prof.debts.slice();nd.push({id:Date.now(),name:"Nova parcela",installment:0,remaining:1,dueDay:20,desc:""});updateProf({debts:nd})}
+function addPontual(){var np=prof.pontuais.slice();np.push({id:Date.now(),name:"Nova divida",total:0,desc:""});updateProf({pontuais:np})}
 function removeDebt(id){updateProf({debts:prof.debts.filter(function(d){return d.id!==id})})}
 function removePontual(id){updateProf({pontuais:prof.pontuais.filter(function(p){return p.id!==id})})}
 function updateDebt(id,key,val){var nd=prof.debts.map(function(d){if(d.id===id){var n=Object.assign({},d);n[key]=val;return n}return d});updateProf({debts:nd})}
 function updatePontual(id,key,val){var np=prof.pontuais.map(function(p){if(p.id===id){var n=Object.assign({},p);n[key]=val;return n}return p});updateProf({pontuais:np})}
 function markPontualPaid(id){removePontual(id)}
+function addIncome(){var ni=prof.incomes.slice();ni.push({name:"Nova receita",value:0,day:15,desc:""});updateProf({incomes:ni})}
+function removeIncome(i){var ni=prof.incomes.slice();ni.splice(i,1);updateProf({incomes:ni})}
+function updateIncome(i,key,val){var ni=prof.incomes.map(function(x,j){if(j===i){var n=Object.assign({},x);n[key]=val;return n}return x});updateProf({incomes:ni})}
+function addExpense(){var ne=prof.expenses.slice();ne.push({name:"Nova despesa",value:0,category:"pessoal",desc:""});updateProf({expenses:ne})}
+function removeExpense(i){var ne=prof.expenses.slice();ne.splice(i,1);updateProf({expenses:ne})}
+function updateExpense(i,key,val){var ne=prof.expenses.map(function(x,j){if(j===i){var n=Object.assign({},x);n[key]=val;return n}return x});updateProf({expenses:ne})}
 
 var SC={background:"#15151F",border:"1px solid rgba(255,255,255,0.04)",borderRadius:14,padding:"18px"};
 var tabs=[{id:"visao",l:"Visao"},{id:"gastos",l:"Gastos"},{id:"dividas",l:"Dividas"},{id:"config",l:"Config"}];
@@ -311,13 +317,55 @@ ce("div",{style:{background:"#15151F",borderRadius:12,padding:"14px 12px",textAl
 ce("div",{style:{background:"#15151F",borderRadius:12,padding:"14px 12px",textAlign:"center",border:"1px solid rgba(255,255,255,0.04)"}},ce(CP,{pct:Math.max(0,Math.min(balance/totI*100,100)),size:70,sw:5,color:balance>=0?"#4ECDC4":"#FF6B6B",label:"Sobra"}))
 ),
 ce("div",{style:SC},
-ce("div",{style:{fontSize:12,fontWeight:600,marginBottom:12}},"Receitas"),
-prof.incomes.map(function(inc,i){return ce("div",{key:i,style:{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:i<prof.incomes.length-1?"1px solid rgba(255,255,255,0.03)":"none"}},ce("div",null,ce("div",{style:{fontSize:13,color:"#C8C8D8"}},inc.name),ce("div",{style:{fontSize:10,color:"#5A5A72"}},"Dia "+inc.day)),ce("div",{style:{fontSize:14,fontFamily:"'Space Mono',monospace",color:"#4ECDC4",fontWeight:600}},"+"+fmt(inc.value)))})
+ce("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
+ce("div",{style:{fontSize:12,fontWeight:600}},"Receitas"),
+ce("button",{onClick:addIncome,style:{padding:"6px 12px",borderRadius:20,border:"none",cursor:"pointer",background:"#4ECDC4",color:"#0D0D14",fontSize:10,fontWeight:700}},"+ Adicionar")
 ),
-prof.expenses.length>0?ce("div",{style:SC},
-ce("div",{style:{fontSize:12,fontWeight:600,marginBottom:12}},"Despesas Fixas"),
-prof.expenses.map(function(exp,i){return ce("div",{key:i,style:{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:i<prof.expenses.length-1?"1px solid rgba(255,255,255,0.03)":"none"}},ce("span",{style:{fontSize:13,color:"#C8C8D8"}},exp.name),ce("span",{style:{fontSize:14,fontFamily:"'Space Mono',monospace",color:"#FF6B6B"}},"-"+fmt(exp.value)))})
-):null
+prof.incomes.map(function(inc,i){
+var isEd=editing==="inc"+i;
+return ce("div",{key:i,style:{padding:"8px 0",borderBottom:i<prof.incomes.length-1?"1px solid rgba(255,255,255,0.03)":"none"}},
+isEd?ce("div",{style:{display:"flex",flexDirection:"column",gap:8}},
+ce("input",{value:inc.name,onChange:function(ev){updateIncome(i,"name",ev.target.value)},placeholder:"Nome",style:{border:"1px solid rgba(255,255,255,0.08)",background:"#0D0D14",color:"#F8F8F2",padding:"10px 14px",borderRadius:10,fontSize:13,fontFamily:"'DM Sans',sans-serif",outline:"none",width:"100%"}}),
+ce("div",{style:{display:"flex",gap:8}},
+ce("div",{style:{flex:2}},ce("div",{style:{fontSize:9,color:"#5A5A72",marginBottom:2}},"Valor R$"),ce("input",{type:"number",value:inc.value,onChange:function(ev){updateIncome(i,"value",parseFloat(ev.target.value)||0)},style:{border:"1px solid rgba(255,255,255,0.08)",background:"#0D0D14",color:"#F8F8F2",padding:"10px",borderRadius:10,fontSize:13,outline:"none",width:"100%"}})),
+ce("div",{style:{flex:1}},ce("div",{style:{fontSize:9,color:"#5A5A72",marginBottom:2}},"Dia"),ce("input",{type:"number",value:inc.day,onChange:function(ev){updateIncome(i,"day",parseInt(ev.target.value)||1)},style:{border:"1px solid rgba(255,255,255,0.08)",background:"#0D0D14",color:"#F8F8F2",padding:"10px",borderRadius:10,fontSize:13,outline:"none",width:"100%"}}))
+),
+ce("textarea",{value:inc.desc||"",onChange:function(ev){updateIncome(i,"desc",ev.target.value)},placeholder:"Observacoes (opcional)",rows:2,style:{border:"1px solid rgba(255,255,255,0.08)",background:"#0D0D14",color:"#F8F8F2",padding:"10px 14px",borderRadius:10,fontSize:12,fontFamily:"'DM Sans',sans-serif",outline:"none",width:"100%",resize:"vertical"}}),
+ce("div",{style:{display:"flex",gap:8,marginTop:4}},
+ce("button",{onClick:function(){sEditing(null)},style:{flex:1,padding:"8px",borderRadius:10,border:"none",cursor:"pointer",background:"#4ECDC4",color:"#0D0D14",fontWeight:700,fontSize:12}},"Salvar"),
+prof.incomes.length>1?ce("button",{onClick:function(){removeIncome(i);sEditing(null)},style:{padding:"8px 12px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(255,107,107,0.15)",color:"#FF6B6B",fontWeight:700,fontSize:12}},"Excluir"):null
+)
+):ce("div",{onClick:function(){sEditing("inc"+i)},style:{display:"flex",justifyContent:"space-between",cursor:"pointer"}},
+ce("div",null,ce("div",{style:{fontSize:13,color:"#C8C8D8"}},inc.name),ce("div",{style:{fontSize:10,color:"#5A5A72"}},"Dia "+inc.day+(inc.desc?" - "+inc.desc:""))),
+ce("div",{style:{fontSize:14,fontFamily:"'Space Mono',monospace",color:"#4ECDC4",fontWeight:600}},"+"+fmt(inc.value))
+)
+);
+})
+),
+ce("div",{style:SC},
+ce("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
+ce("div",{style:{fontSize:12,fontWeight:600}},"Despesas Fixas"),
+ce("button",{onClick:addExpense,style:{padding:"6px 12px",borderRadius:20,border:"none",cursor:"pointer",background:"#FF6B6B",color:"#FFF",fontSize:10,fontWeight:700}},"+ Adicionar")
+),
+prof.expenses.map(function(exp,i){
+var isEd=editing==="exp"+i;
+return ce("div",{key:i,style:{padding:"8px 0",borderBottom:i<prof.expenses.length-1?"1px solid rgba(255,255,255,0.03)":"none"}},
+isEd?ce("div",{style:{display:"flex",flexDirection:"column",gap:8}},
+ce("input",{value:exp.name,onChange:function(ev){updateExpense(i,"name",ev.target.value)},placeholder:"Nome",style:{border:"1px solid rgba(255,255,255,0.08)",background:"#0D0D14",color:"#F8F8F2",padding:"10px 14px",borderRadius:10,fontSize:13,fontFamily:"'DM Sans',sans-serif",outline:"none",width:"100%"}}),
+ce("div",null,ce("div",{style:{fontSize:9,color:"#5A5A72",marginBottom:2}},"Valor R$"),ce("input",{type:"number",value:exp.value,onChange:function(ev){updateExpense(i,"value",parseFloat(ev.target.value)||0)},style:{border:"1px solid rgba(255,255,255,0.08)",background:"#0D0D14",color:"#F8F8F2",padding:"10px",borderRadius:10,fontSize:13,outline:"none",width:"100%"}})),
+ce("textarea",{value:exp.desc||"",onChange:function(ev){updateExpense(i,"desc",ev.target.value)},placeholder:"Observacoes (opcional)",rows:2,style:{border:"1px solid rgba(255,255,255,0.08)",background:"#0D0D14",color:"#F8F8F2",padding:"10px 14px",borderRadius:10,fontSize:12,fontFamily:"'DM Sans',sans-serif",outline:"none",width:"100%",resize:"vertical"}}),
+ce("div",{style:{display:"flex",gap:8,marginTop:4}},
+ce("button",{onClick:function(){sEditing(null)},style:{flex:1,padding:"8px",borderRadius:10,border:"none",cursor:"pointer",background:"#4ECDC4",color:"#0D0D14",fontWeight:700,fontSize:12}},"Salvar"),
+ce("button",{onClick:function(){removeExpense(i);sEditing(null)},style:{padding:"8px 12px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(255,107,107,0.15)",color:"#FF6B6B",fontWeight:700,fontSize:12}},"Excluir")
+)
+):ce("div",{onClick:function(){sEditing("exp"+i)},style:{display:"flex",justifyContent:"space-between",cursor:"pointer"}},
+ce("div",null,ce("span",{style:{fontSize:13,color:"#C8C8D8"}},exp.name),exp.desc?ce("div",{style:{fontSize:10,color:"#5A5A72"}},exp.desc):null),
+ce("span",{style:{fontSize:14,fontFamily:"'Space Mono',monospace",color:"#FF6B6B"}},"-"+fmt(exp.value))
+)
+);
+}),
+prof.expenses.length===0?ce("div",{style:{fontSize:11,color:"#5A5A72",textAlign:"center",padding:8}},"Nenhuma despesa fixa. Toque + para adicionar."):null
+)
 ):null,
 
 tab==="gastos"?ce(ChatComp,{expenses:exps,setExpenses:sExps}):null,
@@ -342,13 +390,14 @@ ce("div",{style:{flex:1}},ce("div",{style:{fontSize:9,color:"#5A5A72",marginBott
 ce("div",{style:{flex:1}},ce("div",{style:{fontSize:9,color:"#5A5A72",marginBottom:2}},"Restantes"),ce("input",{className:"inp",type:"number",value:d.remaining,onChange:function(ev){updateDebt(d.id,"remaining",parseInt(ev.target.value)||1)}})),
 ce("div",{style:{flex:1}},ce("div",{style:{fontSize:9,color:"#5A5A72",marginBottom:2}},"Dia venc."),ce("input",{className:"inp",type:"number",value:d.dueDay,onChange:function(ev){updateDebt(d.id,"dueDay",parseInt(ev.target.value)||1)}}))
 ),
+ce("textarea",{className:"inp",value:d.desc||"",onChange:function(ev){updateDebt(d.id,"desc",ev.target.value)},placeholder:"Observacoes (ex: R$400 - R$40 gas - R$15)",rows:2,style:{resize:"vertical",fontSize:12}}),
 ce("div",{style:{display:"flex",gap:8,marginTop:4}},
 ce("button",{className:"btn btn-t",onClick:function(){sEditing(null)},style:{flex:1,fontSize:12,padding:"8px"}},"Salvar"),
 ce("button",{className:"btn btn-r",onClick:function(){removeDebt(d.id);sEditing(null)},style:{fontSize:12,padding:"8px"}},"Excluir")
 )
 ):ce("div",{onClick:function(){sEditing("d"+d.id)},style:{cursor:"pointer"}},
 ce("div",{style:{display:"flex",justifyContent:"space-between"}},
-ce("div",null,ce("div",{style:{fontSize:14,fontWeight:600}},d.name),ce("div",{style:{fontSize:10,color:"#5A5A72",marginTop:2}},d.remaining+"x de "+fmt(d.installment)+" - Dia "+d.dueDay)),
+ce("div",null,ce("div",{style:{fontSize:14,fontWeight:600}},d.name),ce("div",{style:{fontSize:10,color:"#5A5A72",marginTop:2}},d.remaining+"x de "+fmt(d.installment)+" - Dia "+d.dueDay),d.desc?ce("div",{style:{fontSize:10,color:"#8B8B9E",marginTop:3,fontStyle:"italic"}},d.desc):null),
 ce("div",{style:{textAlign:"right"}},ce("div",{style:{fontSize:16,fontWeight:700,fontFamily:"'Space Mono',monospace"}},fmt(d.installment*d.remaining)),ce("div",{style:{fontSize:9,padding:"2px 8px",borderRadius:20,background:"rgba(255,217,61,0.1)",color:"#FFD93D",display:"inline-block",marginTop:4}},d.remaining+" restantes"))
 ),
 ce("div",{style:{fontSize:9,color:"#5A5A72",marginTop:8,textAlign:"center"}},"Toque para editar")
@@ -366,6 +415,7 @@ return ce("div",{key:p.id,style:{background:"#15151F",border:"1px solid rgba(255
 isEd?ce("div",{style:{display:"flex",flexDirection:"column",gap:8}},
 ce("input",{className:"inp",value:p.name,onChange:function(ev){updatePontual(p.id,"name",ev.target.value)},placeholder:"Pra quem"}),
 ce("div",null,ce("div",{style:{fontSize:9,color:"#5A5A72",marginBottom:2}},"Valor R$"),ce("input",{className:"inp",type:"number",value:p.total,onChange:function(ev){updatePontual(p.id,"total",parseFloat(ev.target.value)||0)}})),
+ce("textarea",{className:"inp",value:p.desc||"",onChange:function(ev){updatePontual(p.id,"desc",ev.target.value)},placeholder:"Observacoes (ex: descontar R$40 gasolina)",rows:2,style:{resize:"vertical",fontSize:12}}),
 ce("div",{style:{display:"flex",gap:8,marginTop:4}},
 ce("button",{className:"btn btn-t",onClick:function(){sEditing(null)},style:{flex:1,fontSize:12,padding:"8px"}},"Salvar"),
 ce("button",{className:"btn",onClick:function(){markPontualPaid(p.id);sEditing(null)},style:{flex:1,fontSize:12,padding:"8px",background:"rgba(78,205,196,0.15)",color:"#4ECDC4"}},"Ja paguei"),
@@ -373,7 +423,7 @@ ce("button",{className:"btn btn-r",onClick:function(){removePontual(p.id);sEditi
 )
 ):ce("div",{onClick:function(){sEditing("p"+p.id)},style:{cursor:"pointer"}},
 ce("div",{style:{display:"flex",justifyContent:"space-between"}},
-ce("div",null,ce("div",{style:{fontSize:14,fontWeight:600}},p.name),ce("div",{style:{fontSize:10,color:"#5A5A72",marginTop:2}},"Pagamento unico")),
+ce("div",null,ce("div",{style:{fontSize:14,fontWeight:600}},p.name),ce("div",{style:{fontSize:10,color:"#5A5A72",marginTop:2}},"Pagamento unico"),p.desc?ce("div",{style:{fontSize:10,color:"#8B8B9E",marginTop:3,fontStyle:"italic"}},p.desc):null),
 ce("div",{style:{textAlign:"right"}},ce("div",{style:{fontSize:16,fontWeight:700,fontFamily:"'Space Mono',monospace"}},fmt(p.total)),ce("div",{style:{fontSize:9,padding:"2px 8px",borderRadius:20,background:"rgba(255,107,107,0.15)",color:"#FF6B6B",display:"inline-block",marginTop:4}},"PENDENTE"))
 ),
 ce("div",{style:{fontSize:9,color:"#5A5A72",marginTop:8,textAlign:"center"}},"Toque para editar")
